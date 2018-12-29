@@ -1,0 +1,6 @@
+{
+  "name": "Fullscreen Hot Corner",
+  "description": "Enables hot corner in fullscreen mode",
+  "uuid": "fullscreen-hot-corner@sorrow.about.alice@pm.me",
+  "shell-version": ["3.30.2"]
+}

@@ -1,2 +1,2 @@
-# gnome-shell-fullscreen-hot-corner
-Little Gnome Shell extension that enables Activities hot corner in fullscreen application
+# Fullscreen hot corner for Gnome Shell
+Little Gnome Shell extension that enables Activities hot corner in fullscreen application.
