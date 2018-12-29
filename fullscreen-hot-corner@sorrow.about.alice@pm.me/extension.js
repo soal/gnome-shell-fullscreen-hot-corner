@@ -57,8 +57,6 @@ function _updateHotCorners() {
         let haveTopLeftCorner = true;
 
         if (i != this.primaryIndex) {
-            // Check if we have a top left (right for RTL) corner.
-            // I.e. if there is no monitor directly above or to the left(right)
             let besideX = this._rtl ? monitor.x + 1 : cornerX - 1;
             let besideY = cornerY;
             let aboveX = cornerX;
