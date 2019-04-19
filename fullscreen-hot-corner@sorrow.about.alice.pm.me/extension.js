@@ -19,98 +19,136 @@
 const Main = imports.ui.main;
 const Layout = imports.ui.layout;
 const Lang = imports.lang;
+const HotCorner = imports.ui.layout.HotCorner
 const _origUpdateHotCorners = Main.layoutManager._updateHotCorners;
 
-const FullscreenHotCorner = new Lang.Class({
-    Name: "FullscreenHotCorner",
-    Extends: Layout.HotCorner,
-
-    _toggleOverview() {
-        if (Main.overview.shouldToggleByCornerOrButton()) {
-            this._rippleAnimation();
-            Main.overview.toggle();
-        }
+function prepare(FullscreenHotCorner) {
+    function _removeHotCorners() {
+        this.hotCorners.forEach(corner => {
+            if (corner)
+                corner.destroy();
+        });
+        this.hotCorners = [];
     }
-});
 
-function init() {}
+    function _updateHotCorners() {
+        // destroy old hot corners
+        this.hotCorners.forEach(corner => {
+            if (corner)
+                corner.destroy();
+        });
+        this.hotCorners = [];
 
-function _removeHotCorners() {
-    Main.layoutManager.hotCorners.forEach(corner => {
-        if (corner) corner.destroy();
-    });
-    Main.layoutManager.hotCorners = [];
-}
+        let size = this.panelBox.height;
 
-function _updateHotCorners() {
-    // destroy old hot corners
-    _removeHotCorners();
+        // build new hot corners
+        for (let i = 0; i < this.monitors.length; i++) {
+            let monitor = this.monitors[i];
+            let cornerX = this._rtl ? monitor.x + monitor.width : monitor.x;
+            let cornerY = monitor.y;
 
-    let size = this.panelBox.height;
+            let haveTopLeftCorner = true;
 
-    // build new hot corners
-    for (let i = 0; i < this.monitors.length; i++) {
-        let monitor = this.monitors[i];
-        let cornerX = this._rtl ? monitor.x + monitor.width : monitor.x;
-        let cornerY = monitor.y;
+            if (i != this.primaryIndex) {
+                // Check if we have a top left (right for RTL) corner.
+                // I.e. if there is no monitor directly above or to the left(right)
+                let besideX = this._rtl ? monitor.x + 1 : cornerX - 1;
+                let besideY = cornerY;
+                let aboveX = cornerX;
+                let aboveY = cornerY - 1;
 
-        let haveTopLeftCorner = true;
-
-        if (i != this.primaryIndex) {
-            let besideX = this._rtl ? monitor.x + 1 : cornerX - 1;
-            let besideY = cornerY;
-            let aboveX = cornerX;
-            let aboveY = cornerY - 1;
-
-            for (let j = 0; j < this.monitors.length; j++) {
-                if (i == j) continue;
-                let otherMonitor = this.monitors[j];
-                if (
-                    besideX >= otherMonitor.x &&
-                    besideX < otherMonitor.x + otherMonitor.width &&
-                    besideY >= otherMonitor.y &&
-                    besideY < otherMonitor.y + otherMonitor.height
-                ) {
-                    haveTopLeftCorner = false;
-                    break;
+                for (let j = 0; j < this.monitors.length; j++) {
+                    if (i == j)
+                        continue;
+                    let otherMonitor = this.monitors[j];
+                    if (besideX >= otherMonitor.x &&
+                        besideX < otherMonitor.x + otherMonitor.width &&
+                        besideY >= otherMonitor.y &&
+                        besideY < otherMonitor.y + otherMonitor.height) {
+                        haveTopLeftCorner = false;
+                        break;
+                    }
+                    if (aboveX >= otherMonitor.x &&
+                        aboveX < otherMonitor.x + otherMonitor.width &&
+                        aboveY >= otherMonitor.y &&
+                        aboveY < otherMonitor.y + otherMonitor.height) {
+                        haveTopLeftCorner = false;
+                        break;
+                    }
                 }
-                if (
-                    aboveX >= otherMonitor.x &&
-                    aboveX < otherMonitor.x + otherMonitor.width &&
-                    aboveY >= otherMonitor.y &&
-                    aboveY < otherMonitor.y + otherMonitor.height
-                ) {
-                    haveTopLeftCorner = false;
-                    break;
-                }
+            }
+
+            if (haveTopLeftCorner) {
+                let corner = new FullscreenHotCorner(this, monitor, cornerX, cornerY);
+                corner.setBarrierSize(size);
+                this.hotCorners.push(corner);
+            } else {
+                this.hotCorners.push(null);
             }
         }
 
-        if (haveTopLeftCorner) {
-            let corner = new FullscreenHotCorner(
-                this,
-                monitor,
-                cornerX,
-                cornerY
-            );
-            corner.setBarrierSize(size);
-            this.hotCorners.push(corner);
-        } else {
-            this.hotCorners.push(null);
-        }
+        this.emit('hot-corners-changed');
     }
 
-    this.emit("hot-corners-changed");
+    return {
+        _removeHotCorners,
+        _updateHotCorners
+    }
 }
 
+function initializeNew() {
+    class FullscreenHotCorner extends HotCorner {
+        constructor(layoutManager, monitor, x, y) {
+            super(layoutManager, monitor, x, y)
+        }
+        // Adopted from Gnome Shell, path: /js/ui/layout.js:1237
+        _toggleOverview() {
+            if (Main.overview.shouldToggleByCornerOrButton()) {
+                this._rippleAnimation();
+                Main.overview.toggle();
+            }
+        }
+    }
+    return prepare(FullscreenHotCorner)
+}
+
+function initializeOld() {
+    const FullscreenHotCorner = new Lang.Class({
+        Name: "FullscreenHotCorner",
+        Extends: Layout.HotCorner,
+
+        _toggleOverview() {
+            if (Main.overview.shouldToggleByCornerOrButton()) {
+                this._rippleAnimation();
+                Main.overview.toggle();
+            }
+        }
+    });
+    return prepare(FullscreenHotCorner)
+}
+
+function initialize() {
+    if (!HotCorner) {
+        // GNOME <= 3.30
+        return initializeOld()
+    } else {
+        // GNOME >= 3.32
+        return initializeNew()
+    }
+}
+
+const actions = initialize()
+
+function init() {}
+
 function enable() {
-    Main.layoutManager._updateHotCorners = _updateHotCorners;
+    Main.layoutManager._updateHotCorners = actions._updateHotCorners.bind(Main.layoutManager);
     Main.layoutManager._updateHotCorners();
 }
 
 function disable() {
     // This restores the original hot corners
-    _removeHotCorners();
+    actions._removeHotCorners.call(Main.layoutManager);
     Main.layoutManager._updateHotCorners = _origUpdateHotCorners;
     Main.layoutManager._updateHotCorners();
 }
