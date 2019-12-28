@@ -18,8 +18,7 @@
 
 const Main = imports.ui.main;
 const HotCorner = imports.ui.layout.HotCorner
-const _origUpdateHotCorners = Main.layoutManager._updateHotCorners;
-
+const _origToggleOverview = HotCorner.prototype._toggleOverview
 
 function _toggleOverview() {
     // adopted from original Gnome Shell code but with fullscreen check removed
@@ -30,101 +29,14 @@ function _toggleOverview() {
     }
 }
 
-function initialize() {
-    function _removeHotCorners() {
-        this.hotCorners.forEach(corner => {
-            if (corner)
-                corner.destroy();
-        });
-        this.hotCorners = [];
-    }
-
-    function _updateHotCorners() {
-        // adopted from original Gnome Shell code
-        // location: /js/ui/layout.js:379
-        // destroy old hot corners
-        this.hotCorners.forEach(corner => {
-            if (corner)
-                corner.destroy();
-        });
-        this.hotCorners = [];
-
-        if (!this._interfaceSettings.get_boolean('enable-hot-corners')) {
-            this.emit('hot-corners-changed');
-            return;
-        }
-
-        let size = this.panelBox.height;
-
-        // build new hot corners
-        for (let i = 0; i < this.monitors.length; i++) {
-            let monitor = this.monitors[i];
-            let cornerX = this._rtl ? monitor.x + monitor.width : monitor.x;
-            let cornerY = monitor.y;
-
-            let haveTopLeftCorner = true;
-
-            if (i != this.primaryIndex) {
-                // Check if we have a top left (right for RTL) corner.
-                // I.e. if there is no monitor directly above or to the left(right)
-                let besideX = this._rtl ? monitor.x + 1 : cornerX - 1;
-                let besideY = cornerY;
-                let aboveX = cornerX;
-                let aboveY = cornerY - 1;
-
-                for (let j = 0; j < this.monitors.length; j++) {
-                    if (i == j)
-                        continue;
-                    let otherMonitor = this.monitors[j];
-                    if (besideX >= otherMonitor.x &&
-                        besideX < otherMonitor.x + otherMonitor.width &&
-                        besideY >= otherMonitor.y &&
-                        besideY < otherMonitor.y + otherMonitor.height) {
-                        haveTopLeftCorner = false;
-                        break;
-                    }
-                    if (aboveX >= otherMonitor.x &&
-                        aboveX < otherMonitor.x + otherMonitor.width &&
-                        aboveY >= otherMonitor.y &&
-                        aboveY < otherMonitor.y + otherMonitor.height) {
-                        haveTopLeftCorner = false;
-                        break;
-                    }
-                }
-            }
-
-            if (haveTopLeftCorner) {
-                // here we monkey-patch _toggleOverview method with our version
-                HotCorner.prototype._toggleOverview = _toggleOverview
-                let corner = new HotCorner(this, monitor, cornerX, cornerY);
-                corner.setBarrierSize(size);
-                this.hotCorners.push(corner);
-            } else {
-                this.hotCorners.push(null);
-            }
-        }
-
-        this.emit('hot-corners-changed');
-    }
-
-    return {
-        _removeHotCorners,
-        _updateHotCorners
-    }
-}
-
-const actions = initialize()
-
 function init() {}
 
 function enable() {
-    Main.layoutManager._updateHotCorners = actions._updateHotCorners.bind(Main.layoutManager);
+    HotCorner.prototype._toggleOverview = _toggleOverview
     Main.layoutManager._updateHotCorners();
 }
 
 function disable() {
-    // This restores the original hot corners
-    actions._removeHotCorners.call(Main.layoutManager);
-    Main.layoutManager._updateHotCorners = _origUpdateHotCorners;
+    HotCorner.prototype._toggleOverview = _origToggleOverview
     Main.layoutManager._updateHotCorners();
 }
