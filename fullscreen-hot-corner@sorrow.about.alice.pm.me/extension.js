@@ -16,10 +16,7 @@
   This program is a derived work of the Gnome Shell.
 */
 
-const { GObject } = imports.gi;
 const Main = imports.ui.main;
-const Layout = imports.ui.layout;
-const Lang = imports.lang;
 const HotCorner = imports.ui.layout.HotCorner
 const _origUpdateHotCorners = Main.layoutManager._updateHotCorners;
 
