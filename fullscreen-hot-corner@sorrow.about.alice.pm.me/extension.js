@@ -16,13 +16,24 @@
   This program is a derived work of the Gnome Shell.
 */
 
+const { GObject } = imports.gi;
 const Main = imports.ui.main;
 const Layout = imports.ui.layout;
 const Lang = imports.lang;
 const HotCorner = imports.ui.layout.HotCorner
 const _origUpdateHotCorners = Main.layoutManager._updateHotCorners;
 
-function prepare(FullscreenHotCorner) {
+
+function _toggleOverview() {
+    // adopted from original Gnome Shell code but with fullscreen check removed
+    // location: /js/ui/layout.js:1227
+    if (Main.overview.shouldToggleByCornerOrButton()) {
+        this._ripples.playAnimation(this._x, this._y);
+        Main.overview.toggle();
+    }
+}
+
+function initialize() {
     function _removeHotCorners() {
         this.hotCorners.forEach(corner => {
             if (corner)
@@ -32,12 +43,19 @@ function prepare(FullscreenHotCorner) {
     }
 
     function _updateHotCorners() {
+        // adopted from original Gnome Shell code
+        // location: /js/ui/layout.js:379
         // destroy old hot corners
         this.hotCorners.forEach(corner => {
             if (corner)
                 corner.destroy();
         });
         this.hotCorners = [];
+
+        if (!this._interfaceSettings.get_boolean('enable-hot-corners')) {
+            this.emit('hot-corners-changed');
+            return;
+        }
 
         let size = this.panelBox.height;
 
@@ -79,7 +97,9 @@ function prepare(FullscreenHotCorner) {
             }
 
             if (haveTopLeftCorner) {
-                let corner = new FullscreenHotCorner(this, monitor, cornerX, cornerY);
+                // here we monkey-patch _toggleOverview method with our version
+                HotCorner.prototype._toggleOverview = _toggleOverview
+                let corner = new HotCorner(this, monitor, cornerX, cornerY);
                 corner.setBarrierSize(size);
                 this.hotCorners.push(corner);
             } else {
@@ -93,47 +113,6 @@ function prepare(FullscreenHotCorner) {
     return {
         _removeHotCorners,
         _updateHotCorners
-    }
-}
-
-function initializeNew() {
-    class FullscreenHotCorner extends HotCorner {
-        constructor(layoutManager, monitor, x, y) {
-            super(layoutManager, monitor, x, y)
-        }
-        // Adopted from Gnome Shell, path: /js/ui/layout.js:1237
-        _toggleOverview() {
-            if (Main.overview.shouldToggleByCornerOrButton()) {
-                this._rippleAnimation();
-                Main.overview.toggle();
-            }
-        }
-    }
-    return prepare(FullscreenHotCorner)
-}
-
-function initializeOld() {
-    const FullscreenHotCorner = new Lang.Class({
-        Name: "FullscreenHotCorner",
-        Extends: Layout.HotCorner,
-
-        _toggleOverview() {
-            if (Main.overview.shouldToggleByCornerOrButton()) {
-                this._rippleAnimation();
-                Main.overview.toggle();
-            }
-        }
-    });
-    return prepare(FullscreenHotCorner)
-}
-
-function initialize() {
-    if (!HotCorner) {
-        // GNOME <= 3.30
-        return initializeOld()
-    } else {
-        // GNOME >= 3.32
-        return initializeNew()
     }
 }
 
