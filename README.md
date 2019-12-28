@@ -1,6 +1,6 @@
 # Fullscreen hot corner for Gnome Shell
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv2-blue.svg)](https://github.com/soal/gnome-shell-fullscreen-hot-corner/blob/master/LICENSE)
+[![License: GPL v2](https://img.shields.io/badge/License-GPLv2-blue.svg)](https://github.com/soal/gnome-shell-fullscreen-hot-corner/blob/master/LICENSE)
 
 Little Gnome Shell extension that enables Activities hot corner in fullscreen application.
 
