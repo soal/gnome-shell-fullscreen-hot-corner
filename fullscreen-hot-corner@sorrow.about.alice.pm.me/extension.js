@@ -17,26 +17,27 @@
 */
 
 const Main = imports.ui.main;
-const HotCorner = imports.ui.layout.HotCorner
-const _origToggleOverview = HotCorner.prototype._toggleOverview
+const HotCorner = imports.ui.layout.HotCorner;
+const _origToggleOverview = HotCorner.prototype._toggleOverview;
 
 function _toggleOverview() {
     // adopted from original Gnome Shell code but with fullscreen check removed
-    // location: /js/ui/layout.js:1227
+    // location: /js/ui/layout.js:1177
     if (Main.overview.shouldToggleByCornerOrButton()) {
-        this._ripples.playAnimation(this._x, this._y);
         Main.overview.toggle();
+        if (Main.overview.animationInProgress)
+            this._ripples.playAnimation(this._x, this._y);
     }
 }
 
 function init() {}
 
 function enable() {
-    HotCorner.prototype._toggleOverview = _toggleOverview
+    HotCorner.prototype._toggleOverview = _toggleOverview;
     Main.layoutManager._updateHotCorners();
 }
 
 function disable() {
-    HotCorner.prototype._toggleOverview = _origToggleOverview
+    HotCorner.prototype._toggleOverview = _origToggleOverview;
     Main.layoutManager._updateHotCorners();
 }
