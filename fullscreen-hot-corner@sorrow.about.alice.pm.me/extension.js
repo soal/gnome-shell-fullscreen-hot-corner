@@ -22,7 +22,7 @@ const _origToggleOverview = HotCorner.prototype._toggleOverview;
 
 function _toggleOverview() {
     // adopted from original Gnome Shell code but with fullscreen check removed
-    // location: /js/ui/layout.js:1227
+    // location: /js/ui/layout.js:1177
     if (Main.overview.shouldToggleByCornerOrButton()) {
         Main.overview.toggle();
         if (Main.overview.animationInProgress)
