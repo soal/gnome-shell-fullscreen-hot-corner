@@ -16,13 +16,13 @@
   This program is a derived work of the Gnome Shell.
 */
 
-const Main = imports.ui.main;
-const HotCorner = imports.ui.layout.HotCorner;
+import * as Main from "resource:///org/gnome/shell/ui/main.js";
+import { HotCorner } from "resource:///org/gnome/shell/ui/layout.js";
 const _origToggleOverview = HotCorner.prototype._toggleOverview;
 
 function _toggleOverview() {
     // adopted from original Gnome Shell code but with fullscreen check removed
-    // location: /js/ui/layout.js:1189
+    // location: /js/ui/layout.js:1255
     if (Main.overview.shouldToggleByCornerOrButton()) {
         Main.overview.toggle();
         if (Main.overview.animationInProgress)
@@ -30,14 +30,14 @@ function _toggleOverview() {
     }
 }
 
-function init() {}
+export default class FullscreenHotCornerExtension {
+    enable() {
+        HotCorner.prototype._toggleOverview = _toggleOverview;
+        Main.layoutManager._updateHotCorners();
+    }
 
-function enable() {
-    HotCorner.prototype._toggleOverview = _toggleOverview;
-    Main.layoutManager._updateHotCorners();
-}
-
-function disable() {
-    HotCorner.prototype._toggleOverview = _origToggleOverview;
-    Main.layoutManager._updateHotCorners();
+    disable() {
+        HotCorner.prototype._toggleOverview = _origToggleOverview;
+        Main.layoutManager._updateHotCorners();
+    }
 }
