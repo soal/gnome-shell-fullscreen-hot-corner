@@ -2,7 +2,7 @@
   "name": "Fullscreen Hot Corner",
   "description": "Enables hot corner in fullscreen mode",
   "uuid": "fullscreen-hot-corner@sorrow.about.alice.pm.me",
-  "shell-versirn": ["45", "46"],
+  "shell-version": ["45", "46"],
   "version": 13,
   "url": "https://github.com/soal/gnome-shell-fullscreen-hot-corner"
 }
